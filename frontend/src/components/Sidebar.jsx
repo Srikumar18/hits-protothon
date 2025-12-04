@@ -131,15 +131,7 @@ const Sidebar = () => {
                 </div>
             </div>
 
-            <div className="p-4 border-t border-border">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500" />
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">User Name</p>
-                        <p className="text-xs text-muted-foreground truncate">user@example.com</p>
-                    </div>
-                </div>
-            </div>
+            
         </motion.div>
     );
 };
