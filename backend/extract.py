@@ -215,6 +215,8 @@ def process_pdf(pdf_path):
                 "width": float(width),
                 "height": float(height),
                 "text_blocks": [],
+                "tables": [],
+                "images": [],
                 "images_count": 0
             }
             
@@ -387,7 +389,7 @@ def process_pdf(pdf_path):
 
                     page_data["images"].append(f"/images/{img_name}")
                     metadata["total_images"] += 1
-
+                    page_data["images_count"] += 1
                 doc.close()
             except Exception as e:
                 print(f"Image extraction failed: {e}")
