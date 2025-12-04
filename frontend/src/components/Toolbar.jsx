@@ -45,16 +45,12 @@ const Toolbar = () => {
     return (
         <div className="h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 sticky top-0 z-10">
             <div className="flex items-center gap-2">
-                <ActionButton icon={Layout} label="Extract Structure" />
-                <ActionButton icon={Sparkles} label="Generate Summary" />
-                <ActionButton icon={Sparkles} label="Generate Keywords" />
+                {/* Action buttons removed as per request */}
             </div>
 
             <div className="flex items-center gap-2">
                 <div className="h-4 w-px bg-border mx-2" />
-                <ActionButton icon={FileJson} label="Export JSON" onClick={handleExportJSON} />
-                <ActionButton icon={FileText} label="Export Markdown" />
-                <ActionButton icon={Download} label="Download" primary />
+                <ActionButton icon={FileJson} label="Export JSON" onClick={handleExportJSON} primary />
             </div>
         </div>
     );
