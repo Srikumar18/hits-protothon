@@ -5,12 +5,8 @@ export const useStore = create((set) => ({
     activeTab: 'summary', // summary, hierarchy, json, tables
     setActiveTab: (tab) => set({ activeTab: tab }),
 
-    files: [
-        { id: '1', name: 'Assignment-1-1135.pdf', date: '2025-12-04' },
-        { id: '2', name: 'Research_Paper_v2.pdf', date: '2025-12-03' },
-        { id: '3', name: 'Invoice_Dec_2025.pdf', date: '2025-12-01' },
-    ],
-    currentFile: mockData,
+    files: [],
+    currentFile: null,
 
     // allow updating currentFile (used to store backend extraction result)
     setCurrentFile: (data) => set({ currentFile: data }),
