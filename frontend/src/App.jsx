@@ -42,11 +42,6 @@ function App() {
         <Toolbar />
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Hierarchy Tree */}
-          <div className="w-64 border-r border-border bg-background flex flex-col hidden md:flex">
-            <HierarchyTree />
-          </div>
-
           {/* Right Panel - Main Content */}
           <div className="flex-1 flex flex-col min-w-0 bg-secondary/10">
             {/* Tabs Header */}
