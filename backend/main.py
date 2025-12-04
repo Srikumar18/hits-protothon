@@ -26,7 +26,7 @@ app.mount(
 
 
 
-@app.post("/extract-pdf/")
+@app.post("/extract-pdf")
 async def extract_pdf_content(file: UploadFile = File(...)):
     print(f"Received file: {file.filename}, content_type: {file.content_type}")
     

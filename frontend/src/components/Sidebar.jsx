@@ -4,15 +4,23 @@ import {
     Upload,
     FileText,
     MoreVertical,
-    ChevronRight,
-    ChevronDown
+    ChevronDown,
+    ChevronRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-    import clsx from 'clsx';
+import clsx from 'clsx';
 import axios from 'axios';
 
 const Sidebar = () => {
-    const { sidebarOpen, files, uploadFile, setCurrentFile } = useStore();
+    const {
+        sidebarOpen,
+        files,
+        uploadFile,
+        setCurrentFile,
+        addSession,
+        loadSession
+    } = useStore();
+
     const [isSavedOpen, setIsSavedOpen] = React.useState(true);
     const fileInputRef = React.useRef(null);
 
@@ -24,10 +32,10 @@ const Sidebar = () => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        // Update local UI list
-        uploadFile(file);
+        // 1️⃣ Add file locally and get its generated ID
+        const fileId = uploadFile(file);
 
-        // Send to backend
+        // 2️⃣ Send to backend for extraction
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -39,13 +47,16 @@ const Sidebar = () => {
             );
 
             if (response.status >= 200 && response.status < 300) {
-                console.log('Extraction response:', response.data);
+                console.log("Extraction response:", response.data);
+
+                // 3️⃣ Save extraction result in session store
+                addSession(fileId, response.data);
+
+                // 4️⃣ Show extracted file in UI
                 setCurrentFile(response.data);
-            } else {
-                console.error('Extraction failed:', response.statusText);
             }
         } catch (err) {
-            console.error('Error sending file to backend:', err);
+            console.error("Error sending file:", err);
         }
     };
 
@@ -85,43 +96,40 @@ const Sidebar = () => {
 
             {/* Session Files */}
             <div className="flex-1 overflow-y-auto p-2">
-                <div className="mb-2">
-                    <button
-                        onClick={() => setIsSavedOpen(!isSavedOpen)}
-                        className="w-full flex items-center gap-1 p-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        {isSavedOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                        SESSION FILES
-                    </button>
+                <button
+                    onClick={() => setIsSavedOpen(!isSavedOpen)}
+                    className="w-full flex items-center gap-1 p-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    {isSavedOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    SESSION FILES
+                </button>
 
-                    {isSavedOpen && (
-                        <div className="space-y-1 mt-1">
-                            {files.length === 0 ? (
-                                <p className="text-xs text-muted-foreground px-2 py-1">
-                                    No files uploaded
-                                </p>
-                            ) : (
-                                files.map((file) => (
-                                    <div
-                                        key={file.id}
-                                        className={clsx(
-                                            "group flex items-center gap-2 p-2 rounded-md text-sm cursor-pointer transition-colors hover:bg-accent/50 text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        <FileText size={16} />
-                                        <span className="truncate flex-1">{file.name}</span>
-                                        <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded">
-                                            <MoreVertical size={14} />
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    )}
-                </div>
+                {isSavedOpen && (
+                    <div className="space-y-1 mt-1">
+                        {files.length === 0 ? (
+                            <p className="text-xs text-muted-foreground px-2 py-1">
+                                No files uploaded
+                            </p>
+                        ) : (
+                            files.map((file) => (
+                                <div
+                                    key={file.id}
+                                    onClick={() => loadSession(file.id)}
+                                    className={clsx(
+                                        "group flex items-center gap-2 p-2 rounded-md text-sm cursor-pointer transition-colors hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    <FileText size={16} />
+                                    <span className="truncate flex-1">{file.name}</span>
+                                    <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded">
+                                        <MoreVertical size={14} />
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
-
-            
         </motion.div>
     );
 };

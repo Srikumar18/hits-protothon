@@ -1,14 +1,36 @@
 import { create } from 'zustand';
-import { mockData } from '../data/mockData';
 
-export const useStore = create((set) => ({
-    activeTab: 'summary', // summary, hierarchy, json, tables
+export const useStore = create((set, get) => ({
+    activeTab: 'summary',
     setActiveTab: (tab) => set({ activeTab: tab }),
 
+    // Uploaded files list
     files: [],
+
+    // All extracted file results in the session
+    sessions: [],   // ← NEW
+
+    // The file currently being viewed
     currentFile: null,
 
-    // allow updating currentFile (used to store backend extraction result)
+    // Save extracted data and update currentFile
+    addSession: (fileId, data) =>
+        set((state) => ({
+            sessions: [
+                ...state.sessions,
+                { fileId, data }, // store entire extracted result
+            ],
+            currentFile: data, // automatically switch view
+        })),
+
+    // Called when user clicks a file in sidebar
+    loadSession: (fileId) => {
+        const session = get().sessions.find((s) => s.fileId === fileId);
+        if (session) {
+            set({ currentFile: session.data });
+        }
+    },
+
     setCurrentFile: (data) => set({ currentFile: data }),
 
     sidebarOpen: true,
@@ -20,18 +42,21 @@ export const useStore = create((set) => ({
     selectedNodeId: null,
     setSelectedNodeId: (id) => set({ selectedNodeId: id }),
 
-    // Mock actions
+    // Handle uploaded file metadata
     uploadFile: (file) => {
-        console.log('Uploading file:', file);
+        const id = Math.random().toString(36).substr(2, 9);
+
         set((state) => ({
             files: [
                 {
-                    id: Math.random().toString(36).substr(2, 9),
+                    id,
                     name: file.name,
                     date: new Date().toISOString().split('T')[0]
                 },
                 ...state.files
             ]
         }));
+
+        return id; // return fileId so backend response can link it
     },
 }));

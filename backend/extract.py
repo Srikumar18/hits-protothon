@@ -358,6 +358,9 @@ def process_pdf(pdf_path):
 
             # 3. Extract Images (PyMuPDF)
             try:
+                # Extract filename without extension
+                base_file_name = os.path.splitext(os.path.basename(pdf_path))[0]
+                base_file_name = base_file_name.replace(" ", "_")  # Optional: clean spaces
 
                 doc = fitz.open(pdf_path)
                 f_page = doc[i]
@@ -366,31 +369,31 @@ def process_pdf(pdf_path):
                 for img_index, img in enumerate(image_list):
                     xref = img[0]
 
-                    # Extract image bytes
                     pix = fitz.Pixmap(doc, xref)
 
-                    img_name = f"page_{page_num}_img_{img_index}.png"
+                    # NEW: Filename now includes original PDF name
+                    img_name = f"{base_file_name}_page_{page_num}_img_{img_index}.png"
                     img_path = os.path.join("extracted_images", img_name)
 
-                    # Make directory if not exists
-                    print("Here")
                     os.makedirs("extracted_images", exist_ok=True)
 
                     # Save the image
-                    if pix.n < 5:  
+                    if pix.n < 5:
                         pix.save(img_path)
                     else:
-                        # If CMYK, convert to RGB
                         pix1 = fitz.Pixmap(fitz.csRGB, pix)
                         pix1.save(img_path)
                         pix1 = None
-                    
+
                     pix = None
 
+                    # Update your API return paths
                     page_data["images"].append(f"/images/{img_name}")
                     metadata["total_images"] += 1
                     page_data["images_count"] += 1
+
                 doc.close()
+
             except Exception as e:
                 print(f"Image extraction failed: {e}")
 
