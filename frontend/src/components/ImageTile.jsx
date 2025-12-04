@@ -3,28 +3,29 @@ import { X } from "lucide-react";
 
 const ImageTile = ({ src, onClose }) => {
     return (
-        <div className="relative w-[500px] h-[500px] rounded-md overflow-hidden shadow-sm border bg-muted">
-            {/* Image */}
+        <div className="relative w-[500px] h-[500px] rounded-md overflow-hidden shadow-lg border bg-muted flex items-center justify-center">
+            
+            {/* Image fully visible with preserved aspect ratio */}
             <img
                 src={src}
                 alt="Extracted"
-                className="w-full h-full object-cover"
+                className="max-w-full max-h-full object-contain"
             />
 
             {/* Close button */}
             <button
                 onClick={onClose}
                 className="
-                    absolute top-1 right-1
-                    w-6 h-6
+                    absolute top-2 right-2
+                    w-8 h-8
                     flex items-center justify-center
                     rounded-full
-                    bg-black/70 hover:bg-black/85 
+                    bg-black/70 hover:bg-black/85
                     text-white 
                     transition
                 "
             >
-                <X size={14} />
+                <X size={18} />
             </button>
         </div>
     );
