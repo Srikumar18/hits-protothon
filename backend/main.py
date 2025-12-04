@@ -5,6 +5,8 @@ import tempfile
 import os
 from extract import process_pdf
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI(title="PDF Text Extraction API", version="1.0.0")
 
@@ -15,6 +17,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount(
+    "/images",
+    StaticFiles(directory="../backend/extracted_images"),
+    name="images"
+)
+
 
 
 @app.post("/extract-pdf/")

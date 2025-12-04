@@ -385,7 +385,7 @@ def process_pdf(pdf_path):
                     
                     pix = None
 
-                    page_data["images_count"] += 1
+                    page_data["images"].append(f"/images/{img_name}")
                     metadata["total_images"] += 1
 
                 doc.close()

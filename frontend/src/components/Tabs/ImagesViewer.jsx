@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { Image as ImageIcon } from 'lucide-react';
+import ImageTile from '../ImageTile';
 
 const ImagesViewer = () => {
     const { currentFile } = useStore();
+    const [selectedImage, setSelectedImage] = useState(null);
+
     // Flatten images from all pages
-    const images = currentFile?.pages?.flatMap(p => p.images.map(img => ({ src: img, page: p.page }))) || [];
+    const images =
+        currentFile?.pages?.flatMap((p) =>
+            p.images.map((img) => ({ src: img, page: p.page }))
+        ) || [];
 
     if (images.length === 0) {
         return (
@@ -17,22 +23,36 @@ const ImagesViewer = () => {
     }
 
     return (
-        <div className="h-full overflow-y-auto p-6 bg-background">
+        <div className="relative h-full overflow-y-auto p-6 bg-background">
+            {/* Grid of images */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {images.map((img, index) => (
-                    <div key={index} className="group relative aspect-square bg-muted/30 rounded-lg border border-border overflow-hidden hover:shadow-md transition-all">
-                        {/* Placeholder for actual image since we don't have the files */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
-                            <ImageIcon size={32} className="mb-2 opacity-50" />
-                            <span className="text-xs font-medium">{img.src}</span>
-                            <span className="text-[10px] mt-1 bg-background/80 px-1.5 py-0.5 rounded">Page {img.page}</span>
-                        </div>
-
-                        {/* Overlay */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors cursor-pointer" />
+                    <div
+                        key={index}
+                        className="group relative aspect-square bg-muted/30 rounded-lg border border-border overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                        onClick={() =>
+                            setSelectedImage(`http://localhost:8000${img.src}`)
+                        }
+                    >
+                        <img
+                            src={`http://localhost:8000${img.src}`}
+                            alt="Extracted"
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                     </div>
                 ))}
             </div>
+
+            {/* Modal for selected image */}
+            {selectedImage && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                    <ImageTile
+                        src={selectedImage}
+                        onClose={() => setSelectedImage(null)}
+                    />
+                </div>
+            )}
         </div>
     );
 };
