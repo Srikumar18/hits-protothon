@@ -14,7 +14,7 @@ import clsx from 'clsx';
 import axios from 'axios';
 
 const Sidebar = () => {
-    const { sidebarOpen, files, uploadFile } = useStore();
+    const { sidebarOpen, files, uploadFile, setCurrentFile } = useStore();
     const [isSavedOpen, setIsSavedOpen] = React.useState(true);
     const fileInputRef = React.useRef(null);
 
@@ -36,7 +36,7 @@ const Sidebar = () => {
 
             // Pass formData as the request body and optional headers as config
             const response = await axios.post(
-                'http://0.0.0.0:8000/extract-pdf',
+                'http://localhost:8000/extract-pdf',
                 formData,
                 {
                     headers: { 'Content-Type': 'multipart/form-data' },
@@ -49,6 +49,9 @@ const Sidebar = () => {
             }
 
             console.log('Extraction response:', response.data);
+
+            // update global state so JSONViewer displays backend result
+            setCurrentFile(response.data);
         } catch (err) {
             console.error('Error sending file to extract-pdf:', err);
         }
