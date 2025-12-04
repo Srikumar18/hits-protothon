@@ -20,8 +20,9 @@ const PDFViewerModal = () => {
 
     // Build the viewer URL with page parameter
     const viewerSrc = pdfViewerUrl
-        ? `http://localhost:8000${pdfViewerUrl}#page=${pdfViewerPage || 1}`
-        : null;
+    ? `http://localhost:8000${pdfViewerUrl}#page=${pdfViewerPage}`
+    : null;
+
 
     return (
         <AnimatePresence>

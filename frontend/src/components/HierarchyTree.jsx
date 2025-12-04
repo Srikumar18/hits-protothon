@@ -15,8 +15,16 @@ const NodeIcon = ({ type }) => {
 
 const TreeNode = ({ node, level = 0 }) => {
     const [isOpen, setIsOpen] = useState(true);
-    const { selectedNodeId, setSelectedNodeId, setCurrentPage } = useStore();
-    const hasChildren = node.children && node.children.length > 0;
+    
+    const { 
+        selectedNodeId, 
+        setSelectedNodeId, 
+        setCurrentPage, 
+        openPDFViewer, 
+        currentFile 
+    } = useStore();
+
+    const hasChildren = node.children?.length > 0;
 
     const handleToggle = (e) => {
         e.stopPropagation();
@@ -25,8 +33,19 @@ const TreeNode = ({ node, level = 0 }) => {
 
     const handleSelect = () => {
         setSelectedNodeId(node.id);
-        if (node.page_refs && node.page_refs.length > 0) {
-            setCurrentPage(node.page_refs[0].page);
+
+        if (node.page_refs?.length > 0) {
+            const page = node.page_refs[0].page;
+
+            console.log("📄 Hierarchy clicked → Page:", page);
+
+            // Update left-side PDF viewer page
+            setCurrentPage(page);
+
+            // Open modal viewer starting at this page
+            if (currentFile?.pdf_url) {
+                openPDFViewer(currentFile.pdf_url, currentFile.name, page);
+            }
         }
     };
 
@@ -35,14 +54,19 @@ const TreeNode = ({ node, level = 0 }) => {
             <div
                 className={clsx(
                     "flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer transition-colors text-sm",
-                    selectedNodeId === node.id ? "bg-primary/10 text-primary" : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                    selectedNodeId === node.id
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-accent text-muted-foreground hover:text-foreground"
                 )}
                 style={{ paddingLeft: `${level * 12 + 8}px` }}
                 onClick={handleSelect}
             >
                 <div
                     onClick={hasChildren ? handleToggle : undefined}
-                    className={clsx("p-0.5 rounded hover:bg-black/5 transition-colors", !hasChildren && "opacity-0")}
+                    className={clsx(
+                        "p-0.5 rounded hover:bg-black/5 transition-colors",
+                        !hasChildren && "opacity-0"
+                    )}
                 >
                     {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </div>

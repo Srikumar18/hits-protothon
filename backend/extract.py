@@ -323,14 +323,16 @@ def extract_structure(classified_blocks):
     current_h2 = None
     
     for block in classified_blocks:
+        page_num = int(block["block_id"].split("_")[0][1:])
         node = {
-            "id": f"n{len(root['children']) + 1}",
+            "id": block["block_id"],   
             "type": block['type'],
             "text": block['text'],
             "level": block.get('level', 4),
-            "page_refs": [{"page": 1, "block_id": block['block_id']}],
+            "page_refs": [{"page": page_num, "block_id": block['block_id']}],
             "confidence": block['confidence']
         }
+        print(node["page_refs"])
         
         if block['level_label'] == 'H1':
             if current_h1:
