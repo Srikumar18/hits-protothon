@@ -12,10 +12,200 @@ from pdf2image import convert_from_path
 import numpy as np
 import cv2
 from xgb_classifier import classify_blocks_with_split
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.tag import pos_tag
+import string
 from summarizer import summarize_text, extractive_summarize
+
+# Download required NLTK data (run once)
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab')
+    
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
+    
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+    
+try:
+    nltk.data.find('taggers/averaged_perceptron_tagger_eng')
+except LookupError:
+    nltk.download('averaged_perceptron_tagger_eng')
 
 def get_timestamp():
     return datetime.datetime.now().isoformat()
+
+def extract_keywords_advanced(text, max_keywords=8):
+    """
+    Advanced keyword extraction with proper NLP preprocessing:
+    1. Tokenization: Split text into words/tokens
+    2. Normalization: Convert to lowercase, remove punctuation
+    3. Stop-word Removal: Remove common words
+    4. Stemming/Lemmatization: Reduce words to root form
+    5. POS filtering: Keep only meaningful parts of speech
+    """
+    if not text or len(text.strip()) < 10:
+        return []
+    
+    # Step 1: Tokenization - Split text into words
+    try:
+        tokens = word_tokenize(text.lower())
+    except LookupError:
+        # Fallback to simple tokenization if NLTK data is not available
+        tokens = re.findall(r'\b\w+\b', text.lower())
+    
+    # Step 2: Normalization - Remove punctuation and non-alphabetic tokens
+    # Keep only alphabetic tokens with length > 2
+    normalized_tokens = [
+        token for token in tokens 
+        if token.isalpha() and len(token) > 2
+    ]
+    
+    # Step 3: Stop-word Removal - Remove common English words
+    stop_words = set(stopwords.words('english'))
+    # Add extensive custom stop words for better filtering
+    custom_stop_words = {
+        'said', 'say', 'get', 'go', 'know', 'make', 'see', 'come', 'could', 
+        'would', 'also', 'one', 'two', 'first', 'last', 'way', 'use', 'used',
+        'using', 'may', 'might', 'must', 'shall', 'will', 'can', 'cannot',
+        'example', 'examples', 'figure', 'table', 'page', 'section', 'chapter',
+        'please', 'thank', 'thanks', 'regards', 'sincerely', 'dear', 'sir', 'madam',
+        'information', 'details', 'contact', 'phone', 'email', 'address', 'website',
+        'free', 'toll', 'hours', 'time', 'date', 'number', 'code', 'reference',
+        'supply', 'supplier', 'provide', 'service', 'services', 'company', 'limited',
+        'india', 'indian', 'delhi', 'mumbai', 'bangalore', 'chennai', 'kolkata',
+        'new', 'old', 'good', 'bad', 'best', 'better', 'great', 'excellent',
+        'available', 'booking', 'book', 'reserved', 'confirm', 'confirmation'
+    }
+    stop_words.update(custom_stop_words)
+    
+    filtered_tokens = [token for token in normalized_tokens if token not in stop_words]
+    
+    # Step 4: POS Tagging - Keep only nouns, adjectives, and verbs
+    pos_tagged = pos_tag(filtered_tokens)
+    meaningful_tokens = [
+        word for word, pos in pos_tagged 
+        if pos.startswith(('NN', 'JJ', 'VB'))  # Nouns, Adjectives, Verbs
+    ]
+    
+    # Step 5: Lemmatization - Reduce words to their root form
+    lemmatizer = WordNetLemmatizer()
+    
+    def get_wordnet_pos(treebank_tag):
+        """Convert treebank POS tag to wordnet POS tag"""
+        if treebank_tag.startswith('J'):
+            return 'a'  # adjective
+        elif treebank_tag.startswith('V'):
+            return 'v'  # verb
+        elif treebank_tag.startswith('N'):
+            return 'n'  # noun
+        elif treebank_tag.startswith('R'):
+            return 'r'  # adverb
+        else:
+            return 'n'  # default to noun
+    
+    # Re-tag the meaningful tokens for lemmatization
+    meaningful_pos_tagged = pos_tag(meaningful_tokens)
+    lemmatized_tokens = [
+        lemmatizer.lemmatize(word, get_wordnet_pos(pos))
+        for word, pos in meaningful_pos_tagged
+    ]
+    
+    # Step 6: Frequency Analysis and Keyword Selection
+    # Count frequency of lemmatized tokens
+    word_freq = Counter(lemmatized_tokens)
+    
+    # More strict filtering for meaningful keywords
+    min_freq = max(2, len(lemmatized_tokens) // 50)  # At least 2% frequency
+    max_freq = len(lemmatized_tokens) // 8   # Not more than 12.5% frequency
+    
+    # Domain-specific meaningful words (keep these even if frequent)
+    domain_keywords = {
+        'railway', 'train', 'passenger', 'ticket', 'booking', 'reservation',
+        'departure', 'arrival', 'platform', 'station', 'journey', 'travel',
+        'refund', 'cancellation', 'insurance', 'policy', 'premium', 'coverage',
+        'microprocessor', 'processor', 'memory', 'register', 'instruction',
+        'algorithm', 'database', 'network', 'security', 'encryption', 'protocol'
+    }
+    
+    filtered_keywords = {}
+    for word, freq in word_freq.items():
+        if len(word) >= 5:
+            # Keep domain keywords regardless of frequency
+            if word.lower() in domain_keywords:
+                filtered_keywords[word] = freq
+            # Keep other words only if they meet frequency criteria
+            elif min_freq <= freq <= max_freq:
+                filtered_keywords[word] = freq
+    
+    # Step 7: Score keywords based on frequency and length
+    scored_keywords = {
+        word: freq * (len(word) / 10)  # Slight preference for longer words
+        for word, freq in filtered_keywords.items()
+    }
+    
+    # Step 8: Extract top keywords
+    top_keywords = sorted(scored_keywords.items(), key=lambda x: x[1], reverse=True)
+    
+    # Return top keywords (word only, not frequency) with better filtering
+    final_keywords = []
+    for word, score in top_keywords[:max_keywords * 2]:  # Get more candidates
+        if len(word) >= 5 and word.isalpha():  # Only alphabetic words
+            # Skip generic terms
+            generic_terms = {'please', 'supply', 'information', 'details', 'service'}
+            if word.lower() not in generic_terms:
+                final_keywords.append(word)
+        if len(final_keywords) >= max_keywords:
+            break
+    
+    return final_keywords
+
+def extract_technical_terms(text, max_terms=4):
+    """
+    Extract only meaningful technical terms and acronyms
+    """
+    technical_terms = []
+    
+    # Find meaningful acronyms (3-5 uppercase letters, avoid common words)
+    acronyms = re.findall(r'\b[A-Z]{3,5}\b', text)
+    # Filter out common non-technical acronyms
+    excluded_acronyms = {'THE', 'AND', 'FOR', 'YOU', 'ARE', 'NOT', 'BUT', 'CAN', 'ALL', 'NEW', 'OLD'}
+    meaningful_acronyms = [a for a in acronyms if a not in excluded_acronyms]
+    technical_terms.extend(meaningful_acronyms)
+    
+    # Find technical patterns (words with numbers)
+    tech_patterns = re.findall(r'\b[A-Za-z]+[0-9]+[A-Za-z0-9]*\b', text)
+    technical_terms.extend(tech_patterns)
+    
+    # Find specific technical/business terms (proper nouns that are likely meaningful)
+    # Look for sequences of capitalized words that are likely company/product names
+    proper_nouns = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}\b', text)
+    
+    # Filter to keep only likely technical/business terms
+    meaningful_terms = []
+    for term in proper_nouns:
+        # Skip common sentence starters and generic terms
+        if not any(term.startswith(x) for x in ['The ', 'This ', 'That ', 'These ', 'Please ', 'Thank ']):
+            # Keep terms that look like company names, product names, or technical terms
+            if len(term.split()) <= 3 and len(term) >= 6:  # Not too long, not too short
+                meaningful_terms.append(term)
+    
+    technical_terms.extend(meaningful_terms)
+    
+    # Remove duplicates and return only the most relevant ones
+    unique_terms = list(dict.fromkeys(technical_terms))  # Preserve order
+    # Return only top terms, prioritizing shorter, more specific ones
+    filtered_terms = [term for term in unique_terms if 5 <= len(term) <= 25]
+    return filtered_terms[:max_terms]
 
 def clean_text(text):
     if not text:
@@ -228,8 +418,20 @@ def process_pdf(pdf_path):
                     images = convert_from_path(pdf_path, first_page=page_num, last_page=page_num)
                     if images:
                         img = images[0]
-                        # Run Tesseract
-                        ocr_data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+                        # Run Tesseract with error handling
+                        try:
+                            ocr_data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+                        except Exception as tesseract_error:
+                            print(f"Tesseract OCR failed for page {page_num}: {tesseract_error}")
+                            # Fallback: create minimal text block indicating OCR failure
+                            page_data["text_blocks"].append({
+                                "block_id": f"p{page_num}_b1",
+                                "text": "[OCR processing failed - image-based content detected]",
+                                "bbox": [0, 0, width, height],
+                                "type": "paragraph",
+                                "ocr_confidence": 0.0
+                            })
+                            continue
                         # Raw OCR text removed to reduce bloat
                         
                         # Convert OCR data to blocks
@@ -428,11 +630,11 @@ def process_pdf(pdf_path):
     # Build Structure
     structure = extract_structure(classified_blocks)
     
-    # Summary & Keywords
+    # Advanced Keywords Extraction
     all_text = " ".join([" ".join([b["text"] for b in p["text_blocks"]]) for p in pages_output])
-    words = re.findall(r'\w+', all_text.lower())
-    common_words = Counter(words).most_common(10)
-    keywords = [w[0] for w in common_words if len(w[0]) > 3] # Filter short words
+    
+    # Extract only NLP-based keywords (no technical terms)
+    keywords = extract_keywords_advanced(all_text, max_keywords=10)
     
     # Use the distilled summarizer to produce the auto_summary
     try:
