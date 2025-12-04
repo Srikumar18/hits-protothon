@@ -11,6 +11,7 @@ import pytesseract
 from pdf2image import convert_from_path
 import numpy as np
 import cv2
+from xgb_classifier import classify_headers_xgb
 
 # --- Configuration ---
 # If you have Tesseract in a custom path, set it here or via env var
@@ -37,21 +38,7 @@ def get_font_stats(words):
     return statistics.mean(sizes), max(sizes)
 
 def classify_block(text, font_size, avg_font_size, is_bold):
-    text = text.strip()
-    if not text:
-        return "text"
-    
-    # Heuristics
-    if re.match(r'^(\d+\.|•|-)\s+', text):
-        return "list"
-    
-    if font_size > avg_font_size * 1.2 or is_bold:
-        return "heading"
-    
-    # Simple check for code (if it looks like code, difficult without font name)
-    if re.search(r'[;{}=]', text) and len(text.split('\n')) > 1:
-        return "code"
-        
+    # Placeholder - will be replaced by XGBoost classification
     return "paragraph"
 
 def cluster_words_into_blocks(words, page_width, page_height):
@@ -125,14 +112,15 @@ def cluster_words_into_blocks(words, page_width, page_height):
             "bbox": [round(x0, 2), round(top, 2), round(x1 - x0, 2), round(bottom - top, 2)],
             "type": block_type,
             "ocr_confidence": 0.99, # Digital PDF
-            "font_size": avg_size # Internal use
+            "font_size": avg_size, # Internal use
+            "page": None  # Will be set later
         })
         
     return result_blocks
 
-def extract_structure(all_blocks):
+def extract_structure(classified_blocks):
     """
-    Build a hierarchical structure from blocks.
+    Build hierarchical structure from XGBoost classified blocks.
     """
     root = {
         "id": "root_1",
@@ -145,45 +133,57 @@ def extract_structure(all_blocks):
         "children": []
     }
     
-    current_heading = None
-    current_parent = root
+    current_h1 = None
+    current_h2 = None
     
-    # Simple stack-based approach or just flat list for now if hierarchy is hard
-    # Let's try to build a simple 1-level depth for headings
-    
-    for block in all_blocks:
+    for block in classified_blocks:
         node = {
-            "id": f"n{len(root['children']) + (len(current_heading['children']) if current_heading else 0) + 1}",
+            "id": f"n{len(root['children']) + 1}",
             "type": block['type'],
             "text": block['text'],
             "normalized_text": clean_text(block['text']).lower(),
-            "level": 1 if block['type'] == 'heading' else 2,
-            "page_refs": [{"page": block['page'], "block_id": block['block_id']}],
-            "confidence": block['ocr_confidence']
+            "level": block.get('level', 4),
+            "page_refs": [{"page": 1, "block_id": block['block_id']}],
+            "confidence": block['confidence']
         }
         
-        if block['type'] == 'heading':
-            # Start new section
-            if current_heading:
-                root['children'].append(current_heading)
-            
-            current_heading = node
-            current_heading['children'] = []
-            # If it's the first block and looks like a title, maybe set root text?
+        if block['level_label'] == 'H1':
+            if current_h1:
+                root['children'].append(current_h1)
+            current_h1 = node
+            current_h1['children'] = []
+            current_h2 = None
             if not root['text']:
                 root['text'] = block['text']
                 root['normalized_text'] = block['text'].lower()
-                
-        else:
-            # Add to current section
-            if current_heading:
-                current_heading['children'].append(node)
+        elif block['level_label'] == 'H2':
+            if current_h2:
+                if current_h1:
+                    current_h1['children'].append(current_h2)
+                else:
+                    root['children'].append(current_h2)
+            current_h2 = node
+            current_h2['children'] = []
+        elif block['level_label'] == 'H3':
+            if current_h2:
+                current_h2['children'].append(node)
+            elif current_h1:
+                current_h1['children'].append(node)
             else:
-                # Add to root if no heading yet
                 root['children'].append(node)
-                
-    if current_heading:
-        root['children'].append(current_heading)
+        else:  # BODY
+            if current_h2:
+                current_h2['children'].append(node)
+            elif current_h1:
+                current_h1['children'].append(node)
+            else:
+                root['children'].append(node)
+    
+    # Add remaining sections
+    if current_h2 and current_h1:
+        current_h1['children'].append(current_h2)
+    if current_h1:
+        root['children'].append(current_h1)
         
     return root
 
@@ -293,8 +293,6 @@ def process_pdf(pdf_path):
                 for idx, b in enumerate(blocks):
                     b["block_id"] = f"p{page_num}_b{idx+1}"
                     b["page"] = page_num # For structure builder
-                    page_data["text_blocks"].append(b)
-                    full_text.append(b["text"])
                     
                     # Track for structure
                     all_blocks_flat.append(b)
@@ -302,7 +300,7 @@ def process_pdf(pdf_path):
                     total_confidence += b["ocr_confidence"]
                     block_count += 1
                     
-                page_data["raw_ocr_text"] = "\n\n".join(full_text)
+                page_data["raw_ocr_text"] = "\n\n".join([b["text"] for b in blocks])
 
             # 2. Extract Tables (Camelot) - Only lattice for bordered tables
             try:
@@ -386,8 +384,31 @@ def process_pdf(pdf_path):
     if block_count > 0:
         metadata["avg_ocr_confidence"] = round(total_confidence / block_count, 2)
     
+    # Classify headers using XGBoost
+    classified_blocks = classify_headers_xgb(all_blocks_flat)
+    
+    # Update pages with classified blocks
+    block_idx = 0
+    for page_data in pages_output:
+        page_blocks = []
+        while block_idx < len(classified_blocks) and classified_blocks[block_idx]['block_id'].startswith(f"p{page_data['page']}_"):
+            block = classified_blocks[block_idx]
+            # Convert to page format
+            orig_block = all_blocks_flat[block_idx]
+            page_blocks.append({
+                "block_id": block['block_id'],
+                "text": block['text'],
+                "bbox": orig_block['bbox'],
+                "type": block['type'],
+                "ocr_confidence": orig_block['ocr_confidence'],
+                "level_label": block['level_label'],
+                "level_confidence": block['confidence']
+            })
+            block_idx += 1
+        page_data["text_blocks"] = page_blocks
+    
     # Build Structure
-    structure = extract_structure(all_blocks_flat)
+    structure = extract_structure(classified_blocks)
     
     # Summary & Keywords
     all_text = " ".join([p["raw_ocr_text"] for p in pages_output])

@@ -9,3 +9,8 @@ pillow
 PyMuPDF
 pdfplumber
 python-multipart
+xgboost
+scikit-learn
+numpy
+pandas
+joblib
