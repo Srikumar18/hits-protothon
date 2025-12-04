@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { useStore } from '../store/useStore';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, FileText } from 'lucide-react';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
@@ -79,9 +79,18 @@ const PDFViewer = () => {
 
             {/* PDF Content */}
             <div className="flex-1 overflow-auto flex justify-center p-8 bg-slate-50/50">
+                {!currentFile?.pdf_url ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center text-muted-foreground">
+                            <FileText size={48} className="mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium">No PDF loaded</p>
+                            <p className="text-sm">Upload a PDF to view it here</p>
+                        </div>
+                    </div>
+                ) : (
                 <div className="relative shadow-2xl transition-all duration-300 ease-in-out" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
                     <Document
-                        file="https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf"
+                        file={currentFile?.pdf_url ? `http://localhost:8000${currentFile.pdf_url}` : null}
                         onLoadSuccess={onDocumentLoadSuccess}
                         className="flex flex-col gap-4"
                         loading={
@@ -126,6 +135,7 @@ const PDFViewer = () => {
                         )}
                     </Document>
                 </div>
+                )}
             </div>
         </div>
     );

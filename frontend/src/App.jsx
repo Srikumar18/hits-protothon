@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Toolbar from './components/Toolbar';
 import HierarchyTree from './components/HierarchyTree';
 import PDFViewer from './components/PDFViewer';
+import PDFViewerModal from './components/PDFViewerModal';
 import JSONViewer from './components/Tabs/JSONViewer';
 import TablesViewer from './components/Tabs/TablesViewer';
 import ImagesViewer from './components/Tabs/ImagesViewer';
@@ -77,6 +78,9 @@ function App() {
           </div>
         </div>
       </div>
+      
+      {/* PDF Viewer Modal */}
+      <PDFViewerModal />
     </div>
   );
 }

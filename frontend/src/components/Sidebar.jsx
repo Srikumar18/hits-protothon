@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import {
     Upload,
     FileText,
-    MoreVertical,
+    Eye,
     ChevronDown,
     ChevronRight
 } from 'lucide-react';
@@ -18,7 +18,9 @@ const Sidebar = () => {
         uploadFile,
         setCurrentFile,
         addSession,
-        loadSession
+        loadSession,
+        sessions,
+        openPDFViewer
     } = useStore();
 
     const [isSavedOpen, setIsSavedOpen] = React.useState(true);
@@ -114,15 +116,31 @@ const Sidebar = () => {
                             files.map((file) => (
                                 <div
                                     key={file.id}
-                                    onClick={() => loadSession(file.id)}
                                     className={clsx(
-                                        "group flex items-center gap-2 p-2 rounded-md text-sm cursor-pointer transition-colors hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+                                        "group flex items-center gap-2 p-2 rounded-md text-sm transition-colors hover:bg-accent/50 text-muted-foreground hover:text-foreground"
                                     )}
                                 >
                                     <FileText size={16} />
-                                    <span className="truncate flex-1">{file.name}</span>
-                                    <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded">
-                                        <MoreVertical size={14} />
+                                    <span 
+                                        className="truncate flex-1 cursor-pointer"
+                                        onClick={() => loadSession(file.id)}
+                                    >
+                                        {file.name}
+                                    </span>
+                                    <button 
+                                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded transition-opacity"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Get the session data to find PDF URL
+                                            const session = sessions.find(s => s.fileId === file.id);
+                                            if (session?.data?.pdf_url) {
+                                                // Open PDF viewer modal
+                                                openPDFViewer(session.data.pdf_url, file.name);
+                                            }
+                                        }}
+                                        title="View PDF"
+                                    >
+                                        <Eye size={14} />
                                     </button>
                                 </div>
                             ))

@@ -42,6 +42,21 @@ export const useStore = create((set, get) => ({
     selectedNodeId: null,
     setSelectedNodeId: (id) => set({ selectedNodeId: id }),
 
+    // PDF Viewer Modal
+    pdfViewerOpen: false,
+    pdfViewerUrl: null,
+    pdfViewerTitle: null,
+    openPDFViewer: (url, title) => set({ 
+        pdfViewerOpen: true, 
+        pdfViewerUrl: url, 
+        pdfViewerTitle: title 
+    }),
+    closePDFViewer: () => set({ 
+        pdfViewerOpen: false, 
+        pdfViewerUrl: null, 
+        pdfViewerTitle: null 
+    }),
+
     // Handle uploaded file metadata
     uploadFile: (file) => {
         const id = Math.random().toString(36).substr(2, 9);
