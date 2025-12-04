@@ -12,10 +12,7 @@ from pdf2image import convert_from_path
 import numpy as np
 import cv2
 from xgb_classifier import classify_headers_xgb
-
-# --- Configuration ---
-# If you have Tesseract in a custom path, set it here or via env var
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+from summarizer import summarize_text, extractive_summarize
 
 def get_timestamp():
     return datetime.datetime.now().isoformat()
@@ -437,10 +434,18 @@ def process_pdf(pdf_path):
     common_words = Counter(words).most_common(10)
     keywords = [w[0] for w in common_words if len(w[0]) > 3] # Filter short words
     
-    summary_text = all_text[:500] + "..." if len(all_text) > 500 else all_text
+    # Use the distilled summarizer to produce the auto_summary
+    try:
+        auto_summary = summarize_text(all_text, max_chunk_chars=1200, min_length=50, max_length=200)
+        #auto_summary = extractive_summarize(all_text, max_sentences=5)
+        # Clean up whitespace/newlines
+        auto_summary = re.sub(r'\s+', ' ', auto_summary).strip()
+    except Exception as e:
+        # Fallback: short excerpt (never fail)
+        auto_summary = (all_text[:500] + "...") if len(all_text) > 500 else all_text
     
     summary = {
-        "auto_summary": summary_text.replace("\n", " "),
+        "auto_summary": auto_summary,
         "keywords": keywords
     }
     

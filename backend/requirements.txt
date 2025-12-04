@@ -15,3 +15,5 @@ numpy
 pandas
 joblib
 fastapi[all]
+transformers
+torch
