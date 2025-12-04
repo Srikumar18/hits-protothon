@@ -12,6 +12,9 @@ export const useStore = create((set) => ({
     ],
     currentFile: mockData,
 
+    // allow updating currentFile (used to store backend extraction result)
+    setCurrentFile: (data) => set({ currentFile: data }),
+
     sidebarOpen: true,
     toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 

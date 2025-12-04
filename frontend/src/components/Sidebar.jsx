@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
+import axios from 'axios';
 
 const Sidebar = () => {
-    const { sidebarOpen, files, uploadFile } = useStore();
+    const { sidebarOpen, files, uploadFile, setCurrentFile } = useStore();
     const [isSavedOpen, setIsSavedOpen] = React.useState(true);
     const fileInputRef = React.useRef(null);
 
@@ -21,10 +22,38 @@ const Sidebar = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (event) => {
+    const handleFileChange = async (event) => {
         const file = event.target.files?.[0];
-        if (file) {
-            uploadFile(file);
+        if (!file) return;
+
+        // keep existing local behavior
+        uploadFile(file);
+
+        // send file to backend for extraction
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Pass formData as the request body and optional headers as config
+            const response = await axios.post(
+                'http://localhost:8000/extract-pdf',
+                formData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                }
+            );
+
+            if (response.status < 200 || response.status >= 300) {
+                console.error('Extraction request failed:', response.statusText || response.status);
+                return;
+            }
+
+            console.log('Extraction response:', response.data);
+
+            // update global state so JSONViewer displays backend result
+            setCurrentFile(response.data);
+        } catch (err) {
+            console.error('Error sending file to extract-pdf:', err);
         }
     };
 

@@ -4,8 +4,25 @@ from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import os
 from extract import process_pdf
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="PDF Text Extraction API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Add CORS middleware
 app.add_middleware(
@@ -26,10 +43,11 @@ async def extract_pdf_content(file: UploadFile = File(...)):
     temp_file_path = None
     try:
         # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_file_path = temp_file.name
+        temp_file_path = file.filename
+
+    # Save the uploaded file with same name
+        with open(temp_file_path, "wb") as f:
+            f.write(await file.read())
         
         print(f"Processing PDF: {temp_file_path}")
         
