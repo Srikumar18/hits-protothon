@@ -116,7 +116,7 @@ const PDFViewer = () => {
                         style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}
                     >
                         <Document
-                            file={`http://localhost:8000${currentFile.pdf_url}`}
+                            file={`https://hits-protothon.onrender.com${currentFile.pdf_url}`}
                             onLoadSuccess={onDocumentLoadSuccess}
                             className="flex flex-col gap-4"
                         >

@@ -20,7 +20,7 @@ const PDFViewerModal = () => {
 
     // Build the viewer URL with page parameter
     const viewerSrc = pdfViewerUrl
-    ? `http://localhost:8000${pdfViewerUrl}#page=${pdfViewerPage}`
+    ? `https://hits-protothon.onrender.com${pdfViewerUrl}#page=${pdfViewerPage}`
     : null;
 
 

@@ -31,11 +31,11 @@ const ImagesViewer = () => {
                         key={index}
                         className="group relative aspect-square bg-muted/30 rounded-lg border border-border overflow-hidden hover:shadow-md transition-all cursor-pointer"
                         onClick={() =>
-                            setSelectedImage(`http://localhost:8000${img.src}`)
+                            setSelectedImage(`https://hits-protothon.onrender.com${img.src}`)
                         }
                     >
                         <img
-                            src={`http://localhost:8000${img.src}`}
+                            src={`https://hits-protothon.onrender.com${img.src}`}
                             alt="Extracted"
                             className="absolute inset-0 w-full h-full object-cover"
                         />

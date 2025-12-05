@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Backend configuration
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://hits-protothon.onrender.com')
 PORT = int(os.getenv('PORT', 8000))
 HOST = os.getenv('HOST', '0.0.0.0')
 
