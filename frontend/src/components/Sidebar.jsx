@@ -31,6 +31,8 @@ const Sidebar = () => {
         fileInputRef.current?.click();
     };
 
+    const { setLoading } = useStore();
+
     const handleFileChange = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -38,6 +40,8 @@ const Sidebar = () => {
         const fileId = uploadFile(file);
 
         try {
+            setLoading(true);  
+
             const formData = new FormData();
             formData.append('file', file);
 
@@ -47,14 +51,16 @@ const Sidebar = () => {
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
 
-            if (response.status >= 200 && response.status < 300) {
-                addSession(fileId, response.data);
-                setCurrentFile(response.data);
-            }
+            addSession(fileId, response.data);
+            setCurrentFile(response.data);
+
         } catch (err) {
             console.error("Error sending file:", err);
+        } finally {
+            setLoading(false); 
         }
     };
+
 
     if (!sidebarOpen) return null;
 

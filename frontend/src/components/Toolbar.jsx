@@ -1,9 +1,10 @@
 import React from 'react';
 import { FileJson } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import LoadingScreen from './LoadingScreen';
 
 const Toolbar = () => {
-    const { currentFile } = useStore();
+    const { currentFile, isLoading } = useStore();
 
     const handleExportJSON = () => {
         if (!currentFile) return;
@@ -35,7 +36,16 @@ const Toolbar = () => {
         </button>
     );
 
-    // ⭐ Logo-style welcome screen
+    /* -----------------------------------------
+       1️⃣ Show loading screen when uploading
+    ------------------------------------------ */
+    if (isLoading) {
+        return <LoadingScreen />;
+    }
+
+    /* -----------------------------------------
+       2️⃣ Show welcome logo if no file loaded
+    ------------------------------------------ */
     if (!currentFile) {
         return (
             <div className="flex flex-col items-center justify-center h-full w-full select-none gap-4">
@@ -61,7 +71,9 @@ const Toolbar = () => {
         );
     }
 
-    // ⭐ Normal toolbar
+    /* -----------------------------------------
+       3️⃣ Normal toolbar (PDF loaded)
+    ------------------------------------------ */
     return (
         <div className="h-14 border-b border-border bg-background/95 backdrop-blur 
                         supports-[backdrop-filter]:bg-background/60 flex items-center 
@@ -71,7 +83,12 @@ const Toolbar = () => {
 
             <div className="flex items-center gap-2">
                 <div className="h-4 w-px bg-border mx-2" />
-                <ActionButton icon={FileJson} label="Export JSON" onClick={handleExportJSON} primary />
+                <ActionButton 
+                    icon={FileJson} 
+                    label="Export JSON" 
+                    onClick={handleExportJSON} 
+                    primary 
+                />
             </div>
         </div>
     );
