@@ -74,9 +74,9 @@ const Sidebar = () => {
             <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-2 mb-6">
                     <div className="w-8 h-8 bg-gradient-to-r from-black to-gray-800 rounded-lg flex items-center justify-center text-white font-bold">
-                        D
+                        <p>{"{ }"}</p>
                     </div>
-                    <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-black to-gray-800 text-transparent bg-clip-text">DocMind</span>
+                    <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-black to-gray-800 text-transparent bg-clip-text">JsonifyPDF</span>
                 </div>
 
                 <input

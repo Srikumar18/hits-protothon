@@ -48,28 +48,38 @@ const Toolbar = () => {
     ------------------------------------------ */
     if (!currentFile) {
         return (
-            <div className="flex flex-col items-center justify-center h-full w-full select-none gap-4">
+            <div className="relative flex flex-col items-center justify-center h-full w-full select-none gap-4 overflow-hidden">
+
+                {/* 🔥 Bottom Vignette Gradient (covers only bottom 60%) */}
+                <div className="
+                    pointer-events-none 
+                    absolute bottom-0 left-0 right-0 h-[60%]
+                    bg-gradient-to-t from-black/60 via-gray-900/30 to-transparent
+                " />
 
                 {/* Logo Box */}
                 <div className="bg-gradient-to-r from-black to-gray-800 
-                                rounded-xl px-12 py-6 shadow-lg">
+                                rounded-xl px-12 py-6 shadow-lg relative z-10">
                     <h1 className="text-5xl font-extrabold text-white tracking-tight">
-                        DocMind
+                        JsonifyPDF
                     </h1>
                 </div>
 
                 {/* Tagline */}
-                <p className="mt-2 text-base text-muted-foreground">
+                <p className="mt-2 text-base text-muted-foreground relative z-10">
                     Extract. Understand. Visualize your documents effortlessly.
                 </p>
 
-                {/* Bottom Prompt */}
-                <p className="absolute bottom-10 text-sm text-muted-foreground">
+                {/* Bottom Prompt (always pinned) */}
+                <p className="absolute bottom-10 text-sm font-semibold text-white z-10">
                     Upload a PDF to get started
                 </p>
+
             </div>
         );
     }
+
+
 
     /* -----------------------------------------
        3️⃣ Normal toolbar (PDF loaded)
