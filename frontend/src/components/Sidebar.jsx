@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 
 const Sidebar = () => {
     const {
@@ -45,8 +45,8 @@ const Sidebar = () => {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await axios.post(
-                'http://localhost:8000/extract-pdf',
+            const response = await axiosInstance.post(
+                '/extract-pdf',
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
