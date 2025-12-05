@@ -13,7 +13,8 @@ HOST = os.getenv('HOST', '0.0.0.0')
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://hits-protothon.vercel.app/"  # Replace with actual Vercel URL
+    "https://hits-protothon.vercel.app",
+    "https://hits-protothon.vercel.app/"  # Production Vercel URL
 ]
 
 # Environment
